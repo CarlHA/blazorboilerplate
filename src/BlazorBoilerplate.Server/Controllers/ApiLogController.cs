@@ -1,28 +1,34 @@
 ﻿using BlazorBoilerplate.Server.Middleware.Wrappers;
-using BlazorBoilerplate.Server.Services;
+using BlazorBoilerplate.Shared.AuthorizationDefinitions;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System;
 using System.Threading.Tasks;
+using BlazorBoilerplate.Server.Managers;
 
 namespace BlazorBoilerplate.Server.Controllers
 {
     [Route("api/[controller]")]
-    [Authorize]
     [ApiController]
     public class ApiLogController : ControllerBase
     {
-        private readonly ApiLogService _apiLogService;
+        private readonly IApiLogManager _apiLogManager;
 
-        public ApiLogController(ApiLogService apiLogService)
+        public ApiLogController(IApiLogManager apiLogManager)
         {
-            _apiLogService = apiLogService;
+            _apiLogManager = apiLogManager;
         }
 
-        // GET: api/ApiLogs
+        // GET: api/ApiLog
         [HttpGet]
+        [AllowAnonymous]
         public async Task<ApiResponse> Get()
-        {
-            return await _apiLogService.Get();
-        }
+        =>  await _apiLogManager.Get();
+
+        // GET: api/ApiLog/ApplicationUserId
+        [HttpGet("[action]")]
+        [Authorize(Policy = Policies.IsAdmin)]
+        public async Task<ApiResponse> GetByApplicationUserId(string userId)
+        =>  await _apiLogManager.GetByApplicationUserId(new Guid(userId));
     }
 }

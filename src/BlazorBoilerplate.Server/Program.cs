@@ -1,5 +1,4 @@
 ﻿using System;
-using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Serilog;
@@ -24,8 +23,14 @@ namespace BlazorBoilerplate.Server
 
             try
             {
+                //IdentityServer4 seed should be happening here but because of this bug https://github.com/aspnet/AspNetCore/issues/12349
+                //the seeding is not implemented here.
                 Log.Information("Starting BlazorBoilerplate web server host");
-                BuildWebHost(args).Run();
+
+                // Per: https://docs.microsoft.com/en-us/aspnet/core/fundamentals/host/generic-host
+                //    The Web Host is no longer recommended for web apps and remains 
+                //    available only for backward compatibility.
+                CreateHostBuilder(args).Build().Run();
                 return 0;
             }
             catch (Exception ex)
@@ -34,14 +39,14 @@ namespace BlazorBoilerplate.Server
                 return 1;
             }
         }
-
-        public static IWebHost BuildWebHost(string[] args) =>
-            WebHost.CreateDefaultBuilder(args)
-                .UseConfiguration(new ConfigurationBuilder()
-                    .AddCommandLine(args)
-                    .Build())
-                .UseStartup<Startup>()
-                .UseSerilog()
-                .Build();
-    }
+        public static IHostBuilder CreateHostBuilder(string[] args) =>
+            Host.CreateDefaultBuilder(args)
+                .ConfigureWebHostDefaults(webBuilder =>
+                {
+                    webBuilder.UseConfiguration(new ConfigurationBuilder()
+                    .AddCommandLine(args).Build())
+                    .UseStartup<Startup>()
+                    .UseSerilog();
+                });
+    };
 }

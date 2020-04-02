@@ -1,4 +1,7 @@
-﻿using System;
+﻿using BlazorBoilerplate.Shared.DataModels;
+using Newtonsoft.Json;
+using System;
+using System.Reflection;
 using System.Runtime.Serialization;
 
 namespace BlazorBoilerplate.Server.Middleware.Wrappers
@@ -14,6 +17,9 @@ namespace BlazorBoilerplate.Server.Middleware.Wrappers
         public int StatusCode { get; set; }
 
         [DataMember]
+        public bool IsError { get; set; }
+
+        [DataMember]
         public string Message { get; set; }
 
         [DataMember(EmitDefaultValue = false)]
@@ -22,13 +28,27 @@ namespace BlazorBoilerplate.Server.Middleware.Wrappers
         [DataMember(EmitDefaultValue = false)]
         public object Result { get; set; }
 
-        public ApiResponse(int statusCode, string message = "", object result = null, ApiError apiError = null, string apiVersion = "0.2.0")
+        [DataMember(EmitDefaultValue = false)]
+        public PaginationDetails PaginationDetails { get; set; }
+
+        [JsonConstructor]
+        public ApiResponse(int statusCode, string message = "", object result = null, ApiError apiError = null, string apiVersion = "", PaginationDetails paginationDetails = null)
         {
-            this.StatusCode = statusCode;
-            this.Message = message;
-            this.Result = result;
-            this.ResponseException = apiError;
-            this.Version = apiVersion;
+            StatusCode = statusCode;
+            Message = message;
+            Result = result;
+            ResponseException = apiError;
+            Version = string.IsNullOrWhiteSpace(apiVersion) ? Assembly.GetEntryAssembly().GetName().Version.ToString() : apiVersion;
+            IsError = false;
+            PaginationDetails = paginationDetails;
+        }
+
+        public ApiResponse(int statusCode, ApiError apiError)
+        {
+            StatusCode = statusCode;
+            Message = apiError.ExceptionMessage;
+            ResponseException = apiError;
+            IsError = true;
         }
     }
 }

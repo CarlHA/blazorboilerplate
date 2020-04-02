@@ -1,51 +1,35 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using BlazorBoilerplate.Server.Managers;
+using BlazorBoilerplate.Server.Middleware.Wrappers;
+using BlazorBoilerplate.Shared.Dto.Account;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
-using BlazorBoilerplate.Server.Services;
-using BlazorBoilerplate.Shared.Dto;
-using BlazorBoilerplate.Server.Middleware.Wrappers;
-using Microsoft.AspNetCore.Http;
-using System.Security.Claims;
+using System.Threading.Tasks;
+using static Microsoft.AspNetCore.Http.StatusCodes;
 
 namespace BlazorBoilerplate.Server.Controllers
 {
     [Route("api/[controller]")]
-    [Authorize]
     [ApiController]
+    [Authorize]
     public class UserProfileController : ControllerBase
     {
-        private readonly ILogger<UserProfileController> _logger;
-        private readonly IUserProfileService _userProfileService;
-        private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly IUserProfileManager _userProfileManager;
 
-        public UserProfileController(IUserProfileService userProfileService, ILogger<UserProfileController> logger, IHttpContextAccessor httpContextAccessor)
+        public UserProfileController(IUserProfileManager userProfileManager)
         {
-            _logger = logger;
-            _userProfileService = userProfileService;
-            _httpContextAccessor = httpContextAccessor;
+            _userProfileManager = userProfileManager;
         }
 
-        // GET: api/UserProfile/Get
+        // GET: api/UserProfile
         [HttpGet("Get")]
         public async Task<ApiResponse> Get()
-        {
-            Guid userId = new Guid(_httpContextAccessor.HttpContext.User.FindFirst(ClaimTypes.NameIdentifier).Value);
-            return await _userProfileService.Get(userId);
-        }
+            => await _userProfileManager.Get();
 
+        // POST: api/UserProfile
         [HttpPost("Upsert")]
         public async Task<ApiResponse> Upsert(UserProfileDto userProfile)
-        {
-            if (!ModelState.IsValid)
-            {
-                return new ApiResponse(400, "User Model is Invalid");
-            }
-
-            await _userProfileService.Upsert(userProfile);
-            return new ApiResponse(200, "Email Successfuly Sent");
-        }
-
+            => ModelState.IsValid ?
+                await _userProfileManager.Upsert(userProfile) :
+                new ApiResponse(Status400BadRequest, "User Model is Invalid");
     }
 }
